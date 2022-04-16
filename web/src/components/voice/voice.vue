@@ -115,7 +115,7 @@ export default {
                 // recodeing
                 console.log('recoder update...');
                 this.sendRecoderBuffer(0x2);
-            }, 1000);
+            }, 330);
         },
         // 0x0 0x0 0x0 0x1---------音频输入开始
         // 0x0 0x0 0x0 0x2---------音频输入中(用户录音时循环发送，初步定义为 1s 中切片一次即发送一次音频)
@@ -124,10 +124,10 @@ export default {
             // get recoder
             if (this.recoder && this.recoder.state == RECORDER_STATE.RECORDING) {
                 let buffer = this.recoder.getRecord({
-                    encodeTo: "wav",
+                    encodeTo: "pcm", // "pcm", "wav"
                     compressible: true,
                 });
-                console.log('send recode ', state, buffer, buffer.arrayBuffer());
+                console.log('send recode ', state, buffer);
                 const blob = new Blob([new Uint8Array([0x0, 0x0, 0x0, state]), buffer]);
                 blob.arrayBuffer()
                 .then((value) => {
