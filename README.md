@@ -1,42 +1,41 @@
-# 使用数据通道发送网页音频流到云端应用
+# Use LarkXR datachannel streaming voice data to cloud app
 
-## node 环境搭建
+---
 
-1. 安装 nodejs v15.14.0 （保持环境一至，都安装 v15.14.0 版本）
+[English](./README.md) [中文](./README.zh_CN.md)
 
-[下载 v15.14.0](https://nodejs.org/download/release/v15.14.0/)
+---
 
-2. 安装 cnpm (npm 淘宝镜像，速度快)
+## Prepare
 
-安装完 nodejs 打开命令行执行下面命令
+### install node
 
-```cmd
-npm install -g cnpm --registry=https://registry.npmmirror.com
-```
+1. install nodejs v15.14.0
 
-3. 安装依赖工具
+[v15.14.0](https://nodejs.org/download/release/v15.14.0/)
+
+2. install yarn
 
 * yarn
 
 ```cmd
-cnpm install -g yarn
+npm install -g yarn
 ```
 
-## 开始Web项目, 进入 web 目录下
+## Start
 
-命令行进入进入 web 目录下，执行:
+Terminal cd to project [web] dir and run: 
 
 ```cmd
+cd web
 yarn install
 ```
 
-### 调试
+### Start Debug
 
 ```cmd
 yarn serve
 ```
-
-yarn serve 执行成功后命令行显示如下：
 
 ```cmd
   App running at:
@@ -44,61 +43,65 @@ yarn serve 执行成功后命令行显示如下：
   - Network: http://192.168.0.161:8080/
 ```
 
-浏览器打开下面连接 http://localhost:8080/
+Browser Open http://localhost:8080/
 
-> 录音功能只支持 https 或者 localhost，不要打开 ip 开头的连接。
+> Browser request https or localhost to enable audio recoder.
 
-### 编译输出
+### Build and output
 
 ```
 yarn build
 ```
 
-### 填写授权码
+### Change LarkSR config
 
-进入 web目录下，web/src/App.vue，找到 87 行
+Open web/src/App.vue find line 87 , change serverAddress, appliId. LarkSR cloud appid from LarkSR admin server.
 
 ```javascript
-larksr.initSDKAuthCode("SDK 授权码，联系 business@pingxingyun.com 获取,注意是 SDK 本身的授权码，不是服务器上的授权")
+// SDK auth code，connect business@pingxingyun.com or register https://www.pingxingyun.com/console/#/
+larksr.initSDKAuthCode("Your SDK ID")
 ```
 
-### 填写 APPID
+### APPID
 
-进入 web目录下，web/src/App.vue，找到 93-95 行
+Open web/src/App.vue find line 93-95
 
 ```javascript
 larksr.connectWithPxyHost({
-    appliId: "您的APPID",
+    // LarkSR cloud appid from LarkSR admin server.
+    // doc
+    // https://www.pingxingyun.com/online/api3_2.html?id=476
+    appliId: "appid from LarkSR admin",
 });
 ```
 
-> 如果是私有部署要在之前填写服务器地址，78 行
+> If not use https://www.pingxingyun.com/console/#/, connect to private LarkXR Server should change LarkXR Server address at line 78
 
-### 发送语音相关
+### Send Voice Data
 
-进入 web目录下，web/src/Components/voice/voice.vue, 主要参考 startRecode, stopRecode, recodeTimeout, sendRecoderBuffer 等方法
+web/src/Components/voice/voice.vue, see startRecode, stopRecode, recodeTimeout, sendRecoderBuffer.
 
-实际发送音频的格式如下
+Data formate
 
 ```javascript
-// 音频格式为 wav, sampleRate: 16000 sampleBits: 16,
-// 0x0 0x0 0x0 0x1---------音频输入开始
-// 0x0 0x0 0x0 0x2---------音频输入中(用户录音时循环发送，初步定义为 1s 中切片一次即发送一次音频)
-// 0x0 0x0 0x0 0x3---------音频输入结束(用户本次输入结束)
+// wav, sampleRate: 16000 sampleBits: 16,
+// 0x0 0x0 0x0 0x1---------Start 
+// 0x0 0x0 0x0 0x2---------Sending(Send interal 1s)
+// 0x0 0x0 0x0 0x3---------End
 ```
 
-请求权限参考 requestAudio 方法。
+Recode audio permission see `requestAudio`。
 
-> 本例子中采集音频使用 https://github.com/Zousdie/recorderx
+> thanks: https://github.com/Zousdie/recorderx
 
-数据通道发送字节数据, 在 sendRecoderBuffer 方法中：
+Send data to cloud use datachannel, see sendRecoderBuffer：
 
 ```javascript
 // send array buffer to datachannel.
 this.larksr?.sendBinaryToDataChannel(uint8array);
 ```
 
-数据通道监听回调，参考 web/src/App.vue
+data callback，see web/src/App.vue
 
 ```javascript
 // 数据通道相关事件
@@ -116,11 +119,9 @@ larksr.on("datachannelbinary", (e) => {
 });
 ```
 
-## Unity3D 应用
+## Cloud Unity3D App
 
-首先导入 lark_datachannel_unity3d_export_unity2019.unitypackage 启用数据通道并接受音频参考 Assets/Scenes/Manager.cs
-
-启用数据通道
+Import lark_datachannel_unity3d_export_unity2019.unitypackage enable datachannel Assets/Scenes/Manager.cs
 
 ```cs
 lark.LarkManager larkManager = lark.LarkManager.Instance;
@@ -142,20 +143,19 @@ else
 }
 ```
 
-接受语音数据
+Receive audio data
 
 ```cs
 public void OnBinaryMessaeg(byte[] binary)
 {
     Debug.Log("OnBinaryMessaeg " + binary.Length);
-    // 0x0 0x0 0x0 0x1---------音频输入开始
-    // 0x0 0x0 0x0 0x2---------音频输入中(用户录音时循环发送，初步定义为 1s 中切片一次即发送一次音频)
-    // 0x0 0x0 0x0 0x3---------音频输入结束(用户本次输入结束)
-
-    // 音频格式为 wav, sampleRate: 16000 sampleBits: 16,
+    // wav, sampleRate: 16000 sampleBits: 16,
+    // 0x0 0x0 0x0 0x1---------Start 
+    // 0x0 0x0 0x0 0x2---------Sending(Send interal 1s)
+    // 0x0 0x0 0x0 0x3---------End
     if (binary.Length < 4)
     {
-        receiveText = "收到错误格式数据 : " + BitConverter.ToString(binary);
+        receiveText = "Data error : " + BitConverter.ToString(binary);
         return;
     }
 
@@ -165,7 +165,7 @@ public void OnBinaryMessaeg(byte[] binary)
 
     if (totalLength + bodyLength >= MAX_VOICE_BUFFER_LENGTH)
     {
-        receiveText = "数据BUFFER已满; 清空已有数据";
+        receiveText = "clera data";
         totalLength = 0;
         return;
     }
@@ -178,20 +178,20 @@ public void OnBinaryMessaeg(byte[] binary)
 
     if (header.SequenceEqual(VOICE_HEADER_START))
     {
-        headerText = "音频开始 Header: ";
+        headerText = "Start Recode Header: ";
     } else if (header.SequenceEqual(VOICE_HEADER_RECODING))
     {
-        headerText = "录音中 Header: ";
+        headerText = "Recoding Header: ";
     }
     else if (header.SequenceEqual(VOICE_HEADER_END))
     {
-        headerText = "音频结束 Header: ";
+        headerText = "End Header: ";
         // 模拟处理数据
         // 处理之后清空buffer
         totalLength = 0;
     } else
     {
-        headerText = "收到未知header : ";
+        headerText = "Wrong header : ";
     }
 
     receiveText = headerText + BitConverter.ToString(header) + "; body length : " + bodyLength + "; total length " + totalLength;
